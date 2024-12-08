@@ -32,22 +32,25 @@ def confirm_drive(label, drive_letter):
     return response.lower() == 'yes'
 
 def copy_files(src, dest):
-    if not os.path.exists(src):
-        print("Source path does not exist.")
-        return
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-    
     total_files = 0
     copied_files = 0
     total_bytes = 0
     start_time = time.time()
 
+    # Calculate the size of files to be copied and adjust total_files count
     for root, _, files in os.walk(src):
-        total_files += len(files)
         for file in files:
-            file_path = os.path.join(root, file)
-            total_bytes += os.path.getsize(file_path)
+            src_file = os.path.join(root, file)
+            relative_path = os.path.relpath(root, src)
+            dest_file_dir = os.path.join(dest, relative_path)
+            dest_file = os.path.join(dest_file_dir, file)
+            
+            if not os.path.exists(dest_file):  # Only count files that need to be copied
+                total_files += 1
+                total_bytes += os.path.getsize(src_file)
+
+    if not os.path.exists(dest):
+        os.makedirs(dest)
 
     for root, _, files in os.walk(src):
         for file in files:
@@ -66,6 +69,7 @@ def copy_files(src, dest):
                 file_end_time = time.time()
                 copied_files += 1
 
+                # Calculate the speed of the copy
                 time_elapsed = file_end_time - file_start_time
                 speed = (file_size / time_elapsed) / 1048576 if time_elapsed > 0 else 0
                 print(f"Copied: {src_file} to {dest_file} [{copied_files}/{total_files} files] at {speed:.2f} MB/s")
